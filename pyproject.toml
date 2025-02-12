@@ -1,0 +1,30 @@
+[project]
+name = "taranis-dataset-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langdetect>=1.0.9",
+    "pandas>=2.2.3",
+    "transformers>=4.48.3",
+]
+
+[project.optional-dependencies]
+dev = ["ruff"]
+
+[tool.ruff]
+line-length = 142
+target-version = "py312"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 142
+disable = """
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring
+"""
+
