@@ -3,16 +3,8 @@ clean_ds.py
 """
 
 import pandas as pd
-from langdetect import detect
-from langdetect.lang_detect_exception import LangDetectException
+from misc import detect_lang
 from transformers import AutoTokenizer
-
-
-def detect_lang(text: str) -> str:
-    try:
-        return detect(text)
-    except LangDetectException:
-        return "err"
 
 
 def df_iterator(df: pd.DataFrame, bs: int):
