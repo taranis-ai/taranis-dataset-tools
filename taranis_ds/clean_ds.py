@@ -33,11 +33,12 @@ def clean_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: int | N
     # remove NoneType or empty News items
     df = df[~df["news_items"].apply(lambda item: item[0]["content"] is None or item[0]["content"] == "")]
 
+    # create columns for content, title & news_item_id from the news_item
     df["content"] = df["news_items"].apply(lambda item: item[0]["content"])
-    df = df[~df["content"].duplicated()]
-
     df["title"] = df["news_items"].apply(lambda item: item[0]["title"])
     df["news_item_id"] = df["news_items"].apply(lambda item: item[0]["id"])
+
+    df = df[~df["content"].duplicated()]  # remove duplicated content
 
     df["tokens"] = get_tokens(df, tokenizer_name)
     df["language"] = df["content"].apply(detect_lang)
