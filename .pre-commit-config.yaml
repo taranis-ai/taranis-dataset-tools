@@ -3,8 +3,14 @@ repos:
     rev: v0.9.4
     hooks:
       - id: ruff
+        name: ruff check
         files: ^(taranis_ds)
+      - id: ruff
+        name: isort
+        files: ^(taranis_ds)
+        args: [--select, I]
       - id: ruff-format
+        name: ruff formatter
         files: ^(taranis_ds)
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
