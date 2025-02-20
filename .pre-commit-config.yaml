@@ -8,7 +8,7 @@ repos:
       - id: ruff
         name: isort
         files: ^(taranis_ds)
-        args: [--select, I]
+        args: [--select, I, --fix]
       - id: ruff-format
         name: ruff formatter
         files: ^(taranis_ds)
