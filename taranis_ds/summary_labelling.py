@@ -4,25 +4,27 @@ summary_labelling.py
 Automatically create summaries for news items from an LLM
 """
 
-import torch
-from langchain_mistralai import ChatMistralAI
-from langchain_core.output_parsers import BaseOutputParser
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import RetryWithErrorOutputParser
-from langchain.schema import OutputParserException
-from config import Config
-from misc import detect_lang
-from pydantic import Field
+import sqlite3
+from typing import Dict, List
+
 import httpx
-from langchain_core.runnables import RunnableLambda, RunnableParallel
-from sentence_transformers import SentenceTransformer
-from langchain.globals import set_debug
+import torch
+from config import Config
 from iso639 import Lang
 from iso639.exceptions import InvalidLanguageValue
+from langchain.globals import set_debug
+from langchain.output_parsers import RetryWithErrorOutputParser
+from langchain.prompts import PromptTemplate
+from langchain.schema import OutputParserException
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.runnables import RunnableLambda, RunnableParallel
+from langchain_mistralai import ChatMistralAI
 from log import get_logger
-from persist import get_db_connection, check_table_exists, check_column_exists, run_query, update_row
-from typing import List, Dict
-import sqlite3
+from misc import detect_lang
+from persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
+from pydantic import Field
+from sentence_transformers import SentenceTransformer
 
 
 logger = get_logger(__name__)
@@ -63,35 +65,34 @@ def convert_language(lang_code: str) -> str:
     return language
 
 
-def assess_summary_quality(embedding_model: torch.nn.Module, original_text: str, summary_text: str) -> float:
+def assess_summary_quality(original_text: str, summary_text: str) -> float:
     # assess the quality of the summary by calculating the similarity of its embeddings
     # with the embeddings of the full text
 
+    embedding_model = SentenceTransformer("sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens")
     ref_embedding = torch.tensor(embedding_model.encode(original_text)).squeeze(0)
     summary_embedding = torch.tensor(embedding_model.encode(summary_text)).squeeze(0)
     similarity = torch.nn.CosineSimilarity(dim=0)(ref_embedding, summary_embedding).item()
     return similarity
 
 
-def get_summaries_for_news_items(news_items: List[Dict], connection: sqlite3.Connection, table_name: str):
-    if Config.DEBUG:
+def get_summaries_for_news_items(
+    chat_model: BaseChatModel,
+    news_items: List[Dict],
+    connection: sqlite3.Connection,
+    table_name: str,
+    max_length: int,
+    quality_threshold: float,
+    debug: bool = False,
+):
+    if debug:
         set_debug(True)
 
-    chat_model = ChatMistralAI(
-        model=Config.SUMMARY_TEACHER_MODEL,
-        api_key=Config.SUMMARY_TEACHER_API_KEY,
-        endpoint=Config.SUMMARY_TEACHER_ENDPOINT,
-        max_tokens=Config.SUMMARY_MAX_TOKENS,
-        streaming=True,
-    )
-
-    sentence_transformer = SentenceTransformer("sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens")
-
-    summary_parser = SummaryParser(max_words=Config.SUMMARY_MAX_LENGTH)
+    summary_parser = SummaryParser(max_words=max_length)
     retry_parser = RetryWithErrorOutputParser.from_llm(parser=summary_parser, llm=chat_model, max_retries=3)
 
     prompt = PromptTemplate(
-        template=SUMMARY_PROMPT_TEMPLATE, input_variables=["text", "language"], partial_variables={"max_words": Config.SUMMARY_MAX_LENGTH}
+        template=SUMMARY_PROMPT_TEMPLATE, input_variables=["text", "language"], partial_variables={"max_words": max_length}
     )
 
     for row in news_items:
@@ -112,7 +113,7 @@ def get_summaries_for_news_items(news_items: List[Dict], connection: sqlite3.Con
         if not summary:
             status = "ERROR"
 
-        if assess_summary_quality(sentence_transformer, row["content"], summary) < Config.SUMMARY_QUALITY_THRESHOLD:
+        if assess_summary_quality(row["content"], summary) < quality_threshold:
             status = "LOW_QUALITY"
 
         try:
@@ -139,7 +140,17 @@ def run():
         logger.error(e)
         return
     news_items = [{"id": row[0], "content": row[1], "language": row[2]} for row in query_result]
-    get_summaries_for_news_items(news_items, connection, Config.TABLE_NAME)
+
+    chat_model = ChatMistralAI(
+        model=Config.SUMMARY_TEACHER_MODEL,
+        api_key=Config.SUMMARY_TEACHER_API_KEY,
+        endpoint=Config.SUMMARY_TEACHER_ENDPOINT,
+        max_tokens=Config.SUMMARY_MAX_TOKENS,
+    )
+
+    get_summaries_for_news_items(
+        chat_model, news_items, connection, Config.TABLE_NAME, Config.SUMMARY_MAX_LENGTH, Config.SUMMARY_QUALITY_THRESHOLD, Config.DEBUG
+    )
 
 
 if __name__ == "__main__":
