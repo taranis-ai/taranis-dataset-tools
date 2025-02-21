@@ -5,6 +5,7 @@ Automatically create summaries for news items from an LLM
 """
 
 import sqlite3
+import time
 from typing import Dict, List
 
 import httpx
@@ -83,6 +84,7 @@ def get_summaries_for_news_items(
     table_name: str,
     max_length: int,
     quality_threshold: float,
+    wait_time: float,
     debug: bool = False,
 ):
     if debug:
@@ -95,6 +97,9 @@ def get_summaries_for_news_items(
         template=SUMMARY_PROMPT_TEMPLATE, input_variables=["text", "language"], partial_variables={"max_words": max_length}
     )
 
+    backoff_coeff = 0.0
+    cooldown_count = 0.0
+
     for row in news_items:
         prompt_lang = convert_language(row["language"])
         retry_parser.parser.desired_lang = row["language"]
@@ -103,23 +108,38 @@ def get_summaries_for_news_items(
             lambda x: retry_parser.parse_with_prompt(**x)
         )
 
-        summary, status = "", "OK"
+        for _ in range(3):
+            try:
+                summary, status = "", "OK"
+                summary = chain.invoke({"text": row["content"], "language": prompt_lang})
+                break
+            except httpx.HTTPError as e:
+                status = "ERROR"
 
-        try:
-            summary = chain.invoke({"text": row["content"], "language": prompt_lang})
-        except httpx.HTTPError:
-            status = "ERROR"
+                if "429" in str(e):
+                    time.sleep(wait_time**backoff_coeff)
+                else:
+                    break
+        else:  # got 429 on all tries
+            status = "TOO_MANY_REQUESTS"
+            backoff_coeff += 1
+            cooldown_count = 0
 
-        if not summary:
-            status = "ERROR"
-
-        if assess_summary_quality(row["content"], summary) < quality_threshold:
-            status = "LOW_QUALITY"
+        if summary:
+            if assess_summary_quality(row["content"], summary) < quality_threshold:
+                status = "LOW_QUALITY"
 
         try:
             update_row(connection, table_name, row["id"], ["summary", "summary_status"], [summary, status])
         except RuntimeError as e:
             logger.error(e)
+
+        time.sleep(wait_time**backoff_coeff)
+        cooldown_count += 1
+        if cooldown_count == 5:
+            cooldown_count = 0
+            if backoff_coeff > 0:
+                backoff_coeff -= 1
 
     set_debug(False)
 
@@ -149,7 +169,14 @@ def run():
     )
 
     get_summaries_for_news_items(
-        chat_model, news_items, connection, Config.TABLE_NAME, Config.SUMMARY_MAX_LENGTH, Config.SUMMARY_QUALITY_THRESHOLD, Config.DEBUG
+        chat_model,
+        news_items,
+        connection,
+        Config.TABLE_NAME,
+        Config.SUMMARY_MAX_LENGTH,
+        Config.SUMMARY_QUALITY_THRESHOLD,
+        Config.SUMMARY_REQUEST_WAIT_TIME,
+        Config.DEBUG,
     )
 
 

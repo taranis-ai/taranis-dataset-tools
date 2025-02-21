@@ -1,7 +1,8 @@
-from pydantic import field_validator, ValidationInfo
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
 import json
+from pathlib import Path
+
+from pydantic import ValidationInfo, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
     SUMMARY_MAX_LENGTH: int = 50
     SUMMARY_TEACHER_TEMPERATURE: float = 0.7
     SUMMARY_QUALITY_THRESHOLD: float = 0.6
+    SUMMARY_REQUEST_WAIT_TIME: float = 2.0
 
     DEBUG: bool = False
 
