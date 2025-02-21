@@ -36,17 +36,18 @@ class Settings(BaseSettings):
     @field_validator("DB_PATH", "TARANIS_DATASET_PATH", mode="before")
     def check_path_exists(v: str) -> str:
         if not Path(v).exists():
-            raise ValueError(f"The path {v} does not exist")
+            raise ValueError(f"The path '{v}' does not exist")
         return v
 
     @field_validator("TARANIS_DATASET_PATH", mode="before")
     def check_is_json(v: str) -> str:
         try:
-            json.loads(v)
-        except ValueError:
-            raise ValueError(f"The file {v} is not a valid .json file")
+            with open(v) as f:
+                json.load(f)
+        except (ValueError, FileNotFoundError):
+            raise ValueError(f"The file '{v}' is not a valid .json file")
         if not v.endswith(".json"):
-            raise ValueError(f"The file {v} is not a valid .json file")
+            raise ValueError(f"The file '{v}' is not a valid .json file")
 
 
 Config = Settings()
