@@ -45,9 +45,8 @@ def get_db_connection(db_path: str) -> sqlite3.Connection:
 
 
 def insert_column(connection: sqlite3.Connection, table_name: str, column_name: str, column_type: str):
-    if check_table_exists(connection, table_name):
-        logger.info("Table %s already exists.", table_name)
-        return
+    if not check_table_exists(connection, table_name):
+        raise RuntimeError(f"Table {table_name} does not exist.")
 
     try:
         query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
@@ -75,7 +74,7 @@ def update_row(connection: sqlite3.Connection, table_name: str, row_id: str, col
             raise RuntimeError(f"Failed to update row with id {row_id}. Error: {e}")
 
         if result.rowcount != 1:
-            raise RuntimeError(f"Could not update row with id {row_id} for unknown reason")
+            raise RuntimeError(f"Could not update row with id {row_id}.")
 
 
 def run_query(connection: sqlite3.Connection, query: str) -> List[Tuple]:
