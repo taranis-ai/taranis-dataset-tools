@@ -13,9 +13,17 @@ def test_get_tokens(tokenizer):
 def test_preprocess_taranis_dataset(taranis_dataset_path, tokenizer):
 
     df = preprocess.preprocess_taranis_dataset(taranis_dataset_path, tokenizer, 1e5)
-    assert len(df) == 5
+    assert len(df) == 6
     assert list(df.columns) == ["id", "news_item_id", "title", "content", "tokens", "language"]
-
-    df = preprocess.preprocess_taranis_dataset(taranis_dataset_path, tokenizer, 500)
-    assert df["tokens"].max() <= 500
     assert set(df["language"].to_list()) == {"en"}
+    assert df.iloc[0]["id"] == "b57978a3-5009-4c6d-82cb-f92693ad39e7"
+    assert df.iloc[3]["title"] == "Test News Item"
+    assert df.iloc[-1]["news_item_id"] == "242144c8-07e5-4432-bec3-6a01ed18c65e"
+
+    df = preprocess.preprocess_taranis_dataset(taranis_dataset_path, tokenizer, 300)
+    assert df["tokens"].max() <= 300
+
+
+
+
+
