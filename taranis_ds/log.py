@@ -5,7 +5,8 @@ Setup logger
 """
 
 import logging
-from config import Config
+
+from taranis_ds.config import Config
 
 
 def get_logger(name: str):

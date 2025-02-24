@@ -7,7 +7,9 @@ Deals with saving results from the pipeline to disk and loading them upon contin
 import sqlite3
 from pathlib import Path
 from typing import List, Tuple
-from log import get_logger
+
+from taranis_ds.log import get_logger
+
 
 logger = get_logger(__name__)
 

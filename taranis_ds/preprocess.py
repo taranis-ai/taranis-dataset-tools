@@ -5,13 +5,16 @@ Run pre-processing steps on raw data exported from Taranis-AI
 Save processed results to an SQLite DB
 """
 
-from persist import get_db_connection, check_table_exists
-import pandas as pd
-from misc import detect_lang
-from transformers import AutoTokenizer
-from config import Config
-from log import get_logger
 import sqlite3
+
+import pandas as pd
+from transformers import AutoTokenizer
+
+from taranis_ds.config import Config
+from taranis_ds.log import get_logger
+from taranis_ds.misc import detect_lang
+from taranis_ds.persist import check_table_exists, get_db_connection
+
 
 logger = get_logger(__name__)
 
@@ -23,7 +26,7 @@ def df_iterator(df: pd.DataFrame, bs: int):
         yield df.iloc[i : i + bs]
 
 
-def get_tokens(df: pd.DataFrame, tokenizer_name: str):
+def get_tokens(df: pd.DataFrame, tokenizer_name: str) -> list:
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     token_lens = []
 
