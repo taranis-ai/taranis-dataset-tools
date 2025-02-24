@@ -10,7 +10,6 @@ from typing import Dict, List
 
 import httpx
 import torch
-from config import Config
 from iso639 import Lang
 from iso639.exceptions import InvalidLanguageValue
 from langchain.globals import set_debug
@@ -21,11 +20,13 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 from langchain_mistralai import ChatMistralAI
-from log import get_logger
-from misc import detect_lang
-from persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
 from pydantic import Field
 from sentence_transformers import SentenceTransformer
+
+from taranis_ds.config import Config
+from taranis_ds.log import get_logger
+from taranis_ds.misc import detect_lang
+from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
 
 
 logger = get_logger(__name__)
@@ -77,7 +78,13 @@ def assess_summary_quality(original_text: str, summary_text: str) -> float:
     return similarity
 
 
-def get_summaries_for_news_items(
+def create_chain(model, prompt, parser):
+    completion_chain = prompt | model | RunnableLambda(lambda x: x.content)
+    chain = RunnableParallel(completion=completion_chain, prompt_value=prompt) | RunnableLambda(lambda x: parser.parse_with_prompt(**x))
+    return chain
+
+
+def create_summaries_for_news_items(
     chat_model: BaseChatModel,
     news_items: List[Dict],
     connection: sqlite3.Connection,
@@ -103,10 +110,7 @@ def get_summaries_for_news_items(
     for row in news_items:
         prompt_lang = convert_language(row["language"])
         retry_parser.parser.desired_lang = row["language"]
-        completion_chain = prompt | chat_model | RunnableLambda(lambda x: x.content)
-        chain = RunnableParallel(completion=completion_chain, prompt_value=prompt) | RunnableLambda(
-            lambda x: retry_parser.parse_with_prompt(**x)
-        )
+        chain = create_chain(chat_model, prompt, retry_parser)
 
         for _ in range(3):
             try:
@@ -168,7 +172,7 @@ def run():
         max_tokens=Config.SUMMARY_MAX_TOKENS,
     )
 
-    get_summaries_for_news_items(
+    create_summaries_for_news_items(
         chat_model,
         news_items,
         connection,
