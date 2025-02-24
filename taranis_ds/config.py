@@ -1,3 +1,5 @@
+import sys
+
 from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -29,6 +31,13 @@ class Settings(BaseSettings):
         if not isinstance(v, str) or not v.strip():
             raise ValueError(f"{info.field_name} must be a non-empty string")
         return v
+
+    def __init__(self, **kwargs):
+        if "pytest" in str(sys.argv):  # if run with pytest
+            self.model_config["cli_parse_args"] = False
+            super().__init__()
+        else:
+            super().__init__()
 
 
 Config = Settings()
