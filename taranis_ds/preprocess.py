@@ -63,16 +63,15 @@ def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: in
     return df[["id", "news_item_id", "title", "content", "tokens", "language"]]
 
 
-def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Connection):
-    existing_df = pd.read_sql_table(table_name, connection, coerce_float=False)
+def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Connection) -> int:
+    existing_df = pd.read_sql(f"SELECT * FROM {table_name}", connection, coerce_float=False)
     new_df = df[~df["id"].isin(existing_df["id"])]  # get only rows that are not already in db
-    if new_df.empy():
+    if new_df.empty:
         logger.info("No new entries to save in database")
-        return
+        return 0
 
-    logger.info("Saving new preprocessed data to %s table", table_name)
     rows = new_df.to_sql(table_name, connection, if_exists="append", index=False)
-    logger.info("%s rows written to %s", rows, table_name)
+    return rows
 
 
 def run():
@@ -82,7 +81,8 @@ def run():
 
     if check_table_exists(connection, Config.TABLE_NAME):
         logger.info("Table %s already exists, update it with new entries", Config.TABLE_NAME)
-        save_df_to_table(df, Config.TABLE_NAME, connection)
+        written_rows = save_df_to_table(df, Config.TABLE_NAME, connection)
+        logger.info("%s rows written to %s", written_rows, Config.TABLE_NAME)
     else:
         logger.info("Creating new table %s", Config.TABLE_NAME)
         df.to_sql(Config.TABLE_NAME, connection, index=False)
