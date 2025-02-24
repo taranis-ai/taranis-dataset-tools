@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,22 +29,6 @@ class Settings(BaseSettings):
         if not isinstance(v, str) or not v.strip():
             raise ValueError(f"{info.field_name} must be a non-empty string")
         return v
-
-    @field_validator("DB_PATH", "TARANIS_DATASET_PATH", mode="before")
-    def check_path_exists(v: str) -> str:
-        if not Path(v).exists():
-            raise ValueError(f"The path '{v}' does not exist")
-        return v
-
-    @field_validator("TARANIS_DATASET_PATH", mode="before")
-    def check_is_json(v: str) -> str:
-        try:
-            with open(v) as f:
-                json.load(f)
-        except (ValueError, FileNotFoundError):
-            raise ValueError(f"The file '{v}' is not a valid .json file")
-        if not v.endswith(".json"):
-            raise ValueError(f"The file '{v}' is not a valid .json file")
 
 
 Config = Settings()
