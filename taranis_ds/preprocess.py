@@ -42,15 +42,16 @@ def get_tokens(df: pd.DataFrame, tokenizer_name: str) -> list:
 def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: int | None = None) -> pd.DataFrame:
     df = pd.read_json(ds_path)
 
-    # remove NoneType or empty News items
-    df = df[~df["news_items"].apply(lambda item: item[0]["content"] is None or item[0]["content"] == "")]
+    df = df.explode("news_items")
 
     # create columns for content, title & news_item_id from the news_item
-    df["content"] = df["news_items"].apply(lambda item: item[0]["content"])
-    df["title"] = df["news_items"].apply(lambda item: item[0]["title"])
-    df["news_item_id"] = df["news_items"].apply(lambda item: item[0]["id"])
+    df["content"] = df["news_items"].apply(lambda item: item["content"])
+    df["title"] = df["news_items"].apply(lambda item: item["title"])
+    df["news_item_id"] = df["news_items"].apply(lambda item: item["id"])
 
-    df = df[~df["content"].duplicated()]  # remove duplicated content
+    # remove NoneType, empty and duplicated News items
+    df = df[~df["news_items"].apply(lambda item: item["content"] is None or item["content"] == "")]
+    df = df[~df["content"].duplicated()]
 
     df["tokens"] = get_tokens(df, tokenizer_name)
     df["language"] = df["content"].apply(detect_lang)
