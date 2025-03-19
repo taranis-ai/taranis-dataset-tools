@@ -1,5 +1,7 @@
 """
-cybersecurity_classification
+cybersecurity_classification.py
+
+Classify news items in Cybersecurity/Non-Cybersecurity
 """
 
 import sqlite3
