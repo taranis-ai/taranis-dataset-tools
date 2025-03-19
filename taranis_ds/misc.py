@@ -5,13 +5,25 @@ Shared functionality across multiple modules
 e.g. Taranis Dataset loading
 """
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+from iso639 import Lang
+from iso639.exceptions import InvalidLanguageValue
 from langdetect import detect
 from langdetect.lang_detect_exception import LangDetectException
 
 
-def detect_lang(text: str) -> str:
+def convert_language(lang_code: str) -> str:
+    try:
+        language = Lang(lang_code).name.lower()
+    except InvalidLanguageValue:
+        return "english"
+
+    return language
+
+
+def detect_language(text: str) -> str:
     try:
         return detect(text)
     except LangDetectException:

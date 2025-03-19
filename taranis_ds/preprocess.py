@@ -12,7 +12,7 @@ from transformers import AutoTokenizer
 
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
-from taranis_ds.misc import detect_lang
+from taranis_ds.misc import detect_language
 from taranis_ds.persist import check_table_exists, get_db_connection
 
 
@@ -54,7 +54,7 @@ def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: in
     df = df[~df["content"].duplicated()]
 
     df["tokens"] = get_tokens(df, tokenizer_name)
-    df["language"] = df["content"].apply(detect_lang)
+    df["language"] = df["content"].apply(detect_language)
     df = df[df["language"] != "err"]
 
     if max_tokens is not None:

@@ -10,8 +10,6 @@ from typing import Dict, List
 
 import httpx
 import torch
-from iso639 import Lang
-from iso639.exceptions import InvalidLanguageValue
 from langchain.globals import set_debug
 from langchain.output_parsers import RetryWithErrorOutputParser
 from langchain.prompts import PromptTemplate
@@ -25,7 +23,7 @@ from sentence_transformers import SentenceTransformer
 
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
-from taranis_ds.misc import detect_lang
+from taranis_ds.misc import convert_language, detect_language
 from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
 
 
@@ -43,7 +41,7 @@ class SummaryParser(BaseOutputParser):
     max_words: int = Field(default=None, description="Desired summary length in words")
 
     def parse(self, text: str):
-        summary_language = detect_lang(text)
+        summary_language = detect_language(text)
         summary_word_count = len(text.split(" "))
 
         if summary_language == "err" or summary_language != self.desired_lang:
@@ -56,15 +54,6 @@ class SummaryParser(BaseOutputParser):
             raise OutputParserException("The summary is too short.")
 
         return text
-
-
-def convert_language(lang_code: str) -> str:
-    try:
-        language = Lang(lang_code).name.lower()
-    except InvalidLanguageValue:
-        return "english"
-
-    return language
 
 
 def assess_summary_quality(original_text: str, summary_text: str) -> float:
