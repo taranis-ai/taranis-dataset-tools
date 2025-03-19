@@ -8,7 +8,6 @@ import sqlite3
 import time
 from typing import Dict, List
 
-import httpx
 import torch
 from langchain.globals import set_debug
 from langchain.output_parsers import RetryWithErrorOutputParser
@@ -16,8 +15,8 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import OutputParserException
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.runnables import RunnableLambda, RunnableParallel
 from langchain_mistralai import ChatMistralAI
+from llm_tools import create_chain, prompt_model_with_retry
 from pydantic import Field
 from sentence_transformers import SentenceTransformer
 
@@ -67,12 +66,6 @@ def assess_summary_quality(original_text: str, summary_text: str) -> float:
     return similarity
 
 
-def create_chain(model, prompt, parser):
-    completion_chain = prompt | model | RunnableLambda(lambda x: x.content)
-    chain = RunnableParallel(completion=completion_chain, prompt_value=prompt) | RunnableLambda(lambda x: parser.parse_with_prompt(**x))
-    return chain
-
-
 def create_summaries_for_news_items(
     chat_model: BaseChatModel,
     news_items: List[Dict],
@@ -81,6 +74,7 @@ def create_summaries_for_news_items(
     max_length: int,
     quality_threshold: float,
     wait_time: float,
+    max_retries: int = 3,
     debug: bool = False,
 ):
     if debug:
@@ -101,26 +95,16 @@ def create_summaries_for_news_items(
         retry_parser.parser.desired_lang = row["language"]
         chain = create_chain(chat_model, prompt, retry_parser)
 
-        for _ in range(3):
-            try:
-                summary, status = "", "OK"
-                summary = chain.invoke({"text": row["content"], "language": prompt_lang})
-                break
-            except httpx.HTTPError as e:
-                status = "ERROR"
+        summary, status = prompt_model_with_retry(
+            chain, wait_time, backoff_coeff, {"text": row["content"], "language": prompt_lang}, max_retries
+        )
 
-                if "429" in str(e):
-                    time.sleep(wait_time**backoff_coeff)
-                else:
-                    break
-        else:  # got 429 on all tries
-            status = "TOO_MANY_REQUESTS"
+        if status == "TOO_MANY_REQUESTS":
             backoff_coeff += 1
             cooldown_count = 0
 
-        if summary:
-            if assess_summary_quality(row["content"], summary) < quality_threshold:
-                status = "LOW_QUALITY"
+        if summary and assess_summary_quality(row["content"], summary) < quality_threshold:
+            status = "LOW_QUALITY"
 
         try:
             update_row(connection, table_name, row["id"], ["summary", "summary_status"], [summary, status])
