@@ -1,5 +1,5 @@
 """
-summary_labelling.py
+summary.py
 
 Automatically create summaries for news items from an LLM
 """
