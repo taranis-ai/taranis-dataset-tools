@@ -4,9 +4,13 @@ from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+VALID_TASKS = ["preprocess", "summary", "cybersecurity_class"]
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore", cli_parse_args=True)
 
+    TASKS: list = VALID_TASKS
     TARANIS_DATASET_PATH: str = ""
 
     PREPROCESS_TOKENIZER: str = "facebook/bart-large-cnn"
@@ -32,17 +36,24 @@ class Settings(BaseSettings):
     TABLE_NAME: str = "results"
 
     @field_validator("DB_PATH", "TABLE_NAME", mode="before")
-    def check_non_empty_string(cls, v: str, info: ValidationInfo) -> str:
-        if not isinstance(v, str) or not v.strip():
+    def check_non_empty_string(cls, value: str, info: ValidationInfo) -> str:
+        if not isinstance(value, str) or not value.strip():
             raise ValueError(f"{info.field_name} must be a non-empty string")
-        return v
+        return value
+
+    @field_validator("TASKS")
+    def check_valid_tasks(cls, value: str) -> str:
+        if len(value) != len(set(value)):
+            raise ValueError("TASKS must not contain duplicate elements")
+
+        if any(item not in VALID_TASKS for item in value):
+            raise ValueError(f"All TASKS must be one of {VALID_TASKS}.")
+        return value
 
     def __init__(self, **kwargs):
         if "pytest" in str(sys.argv):  # if run with pytest
             self.model_config["cli_parse_args"] = False
-            super().__init__()
-        else:
-            super().__init__()
+        super().__init__()
 
 
 Config = Settings()
