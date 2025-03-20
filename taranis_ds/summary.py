@@ -74,7 +74,6 @@ def create_summaries_for_news_items(
     max_length: int,
     quality_threshold: float,
     wait_time: float,
-    max_retries: int = 3,
     debug: bool = False,
 ):
     if debug:
@@ -95,9 +94,7 @@ def create_summaries_for_news_items(
         retry_parser.parser.desired_lang = row["language"]
         chain = create_chain(chat_model, prompt, retry_parser)
 
-        summary, status = prompt_model_with_retry(
-            chain, wait_time, backoff_coeff, {"text": row["content"], "language": prompt_lang}, max_retries
-        )
+        summary, status = prompt_model_with_retry(chain, wait_time**backoff_coeff, {"text": row["content"], "language": prompt_lang})
 
         if status == "TOO_MANY_REQUESTS":
             backoff_coeff += 1

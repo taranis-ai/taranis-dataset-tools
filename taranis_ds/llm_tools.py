@@ -20,7 +20,7 @@ def create_chain(model: BaseChatModel, prompt: PromptTemplate, parser: BaseOutpu
     return chain
 
 
-def prompt_model_with_retry(chain: RunnableSequence, wait_time: float, backoff_coeff: int, model_inputs: dict, max_retries: int = 3):
+def prompt_model_with_retry(chain: RunnableSequence, wait_time: float, model_inputs: dict, max_retries: int = 3):
     for _ in range(max_retries):
         try:
             output, status = "", "OK"
@@ -30,7 +30,7 @@ def prompt_model_with_retry(chain: RunnableSequence, wait_time: float, backoff_c
             status = "ERROR"
 
             if "429" in str(e):
-                time.sleep(wait_time**backoff_coeff)
+                time.sleep(wait_time)
             else:
                 break
     else:  # got 429 on all tries
