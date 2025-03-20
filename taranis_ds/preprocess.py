@@ -80,7 +80,7 @@ def run():
     if not check_config("PREPROCESS_MAX_TOKENS", int, required=False):
         logger.info("Config PREPROCESS_MAX_TOKENS was not set. Imposing no limit on maximum news item length")
 
-    connection = get_db_connection(Config.DB_PATH, init=True)
+    connection = get_db_connection(Config.DB_PATH)
     df = preprocess_taranis_dataset(Config.TARANIS_DATASET_PATH, Config.PREPROCESS_TOKENIZER, Config.PREPROCESS_MAX_TOKENS)
     logger.info("Saving preprocessed data to %s", Config.DB_PATH)
 
