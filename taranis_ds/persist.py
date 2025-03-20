@@ -50,10 +50,11 @@ def insert_column(connection: sqlite3.Connection, table_name: str, column_name: 
 
     try:
         query = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+        logger.info("Adding %s column %s to table %s", column_type, column_name, table_name)
         logger.debug("Running SQL query: %s", query)
         connection.execute(query)
     except sqlite3.OperationalError as e:
-        raise RuntimeError(f"Cannot add column {column_name} to table {table_name}. Error: {e}")
+        raise RuntimeError(f"Cannot add column {column_name} to table {table_name}. Error: {e}") from e
 
 
 def update_row(connection: sqlite3.Connection, table_name: str, row_id: str, columns: List[str], values: List[str | int]):
@@ -71,7 +72,7 @@ def update_row(connection: sqlite3.Connection, table_name: str, row_id: str, col
             logger.debug("Running SQL query: %s", query)
             result = connection.execute(query)
         except sqlite3.OperationalError as e:
-            raise RuntimeError(f"Failed to update row with id {row_id}. Error: {e}")
+            raise RuntimeError(f"Failed to update row with id {row_id}. Error: {e}") from e
 
         if result.rowcount != 1:
             raise RuntimeError(f"Could not update row with id {row_id}.")
@@ -82,5 +83,5 @@ def run_query(connection: sqlite3.Connection, query: str) -> List[Tuple]:
         logger.debug("Running SQL query: %s", query)
         result = connection.execute(query).fetchall()
     except sqlite3.OperationalError as e:
-        raise RuntimeError(f"Failed to execute query {query}. Error: {e}")
+        raise RuntimeError(f"Failed to execute query {query}. Error: {e}") from e
     return result
