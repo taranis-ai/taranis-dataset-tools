@@ -14,7 +14,6 @@ class Settings(BaseSettings):
 
     SUMMARY_MODEL: str = "Mistral-Nemo-Instruct-2407"
     SUMMARY_ENDPOINT: str = "https://mistral-nemo-instruct-2407.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1"
-    SUMMARY_MAX_TOKENS: int = 130
     SUMMARY_API_KEY: str = ""
     SUMMARY_MAX_LENGTH: int = 50
     SUMMARY_TEMPERATURE: float = 0.7

@@ -22,7 +22,7 @@ from sentence_transformers import SentenceTransformer
 from taranis_ds.config import Config
 from taranis_ds.llm_tools import create_chain, prompt_model_with_retry
 from taranis_ds.log import get_logger
-from taranis_ds.misc import convert_language, detect_language
+from taranis_ds.misc import check_config, convert_language, detect_language
 from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
 
 
@@ -119,6 +119,11 @@ def create_summaries_for_news_items(
 
 
 def run():
+    for conf_name, conf_type in [("SUMMARY_MODEL", str), ("SUMMARY_API_KEY", str), ("SUMMARY_ENDPOINT", str), ("SUMMARY_MAX_LENGTH", int)]:
+        if not check_config(conf_name, conf_type):
+            logger.error("Skipping summary step")
+            return
+
     connection = get_db_connection(Config.DB_PATH, init=True)
     if not check_table_exists(connection, Config.TABLE_NAME):
         logger.error("Table %s does not exist. Cannot create summaries", Config.TABLE_NAME)
@@ -136,10 +141,10 @@ def run():
     news_items = [{"id": row[0], "content": row[1], "language": row[2]} for row in query_result]
 
     chat_model = ChatMistralAI(
-        model=Config.SUMMARY_TEACHER_MODEL,
-        api_key=Config.SUMMARY_TEACHER_API_KEY,
-        endpoint=Config.SUMMARY_TEACHER_ENDPOINT,
-        max_tokens=Config.SUMMARY_MAX_TOKENS,
+        model=Config.SUMMARY_MODEL,
+        api_key=Config.SUMMARY_API_KEY,
+        endpoint=Config.SUMMARY_ENDPOINT,
+        max_tokens=Config.SUMMARY_MAX_LENGTH * 2,
     )
 
     create_summaries_for_news_items(
