@@ -16,11 +16,11 @@ from langchain.schema import OutputParserException
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_mistralai import ChatMistralAI
-from llm_tools import create_chain, prompt_model_with_retry
 from pydantic import Field
 from sentence_transformers import SentenceTransformer
 
 from taranis_ds.config import Config
+from taranis_ds.llm_tools import create_chain, prompt_model_with_retry
 from taranis_ds.log import get_logger
 from taranis_ds.misc import convert_language, detect_language
 from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
