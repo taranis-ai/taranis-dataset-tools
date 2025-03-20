@@ -8,10 +8,27 @@ e.g. Taranis Dataset loading
 from pathlib import Path
 
 import pandas as pd
+from config import Config
 from iso639 import Lang
 from iso639.exceptions import InvalidLanguageValue
 from langdetect import detect
 from langdetect.lang_detect_exception import LangDetectException
+
+from taranis_ds.log import get_logger
+
+
+logger = get_logger(__name__)
+
+
+def check_config(name: str, conf_type: type, required: bool = True):
+    if name not in Config:
+        if required:
+            logger.error("Config %s was not set", name)
+        return False
+    if not isinstance(getattr(Config, name), conf_type):
+        if required:
+            logger.error("Config %s is not of type", conf_type)
+        return False
 
 
 def convert_language(lang_code: str) -> str:
