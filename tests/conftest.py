@@ -40,7 +40,7 @@ def taranis_dataset_df():
 @pytest.fixture(scope="function")
 def test_db(test_db_path):
     conn = sqlite3.Connection(test_db_path)
-    conn.execute("CREATE TABLE test(id INTEGER PRIMARY KEY, col1 TEXT, col2 INTEGER)")
+    conn.execute("CREATE TABLE results(id INTEGER PRIMARY KEY, col1 TEXT, col2 INTEGER)")
     yield conn
 
     conn.close()

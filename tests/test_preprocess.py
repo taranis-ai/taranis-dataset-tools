@@ -29,5 +29,5 @@ def test_save_df_to_table(test_db):
                        {"id": 2, "col1": "Yet another text", "col2": 90},
                        {"id": 3, "col1": "three", "col2": 22},
                        ])
-    assert preprocess.save_df_to_table(df, "test", test_db) == 3
-    assert preprocess.save_df_to_table(df, "test", test_db) == 0
+    assert preprocess.save_df_to_table(df, test_db) == 3
+    assert preprocess.save_df_to_table(df, test_db) == 0
