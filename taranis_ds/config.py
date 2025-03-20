@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     TARANIS_DATASET_PATH: str = ""
 
     PREPROCESS_TOKENIZER: str = "facebook/bart-large-cnn"
-    PREPROCESS_MAX_TOKENS: int
+    PREPROCESS_MAX_TOKENS: int = 1e5
+
+    PROCESSED_DATASET_PATH: str = ""
 
     SUMMARY_MODEL: str = "Mistral-Nemo-Instruct-2407"
     SUMMARY_ENDPOINT: str = "https://mistral-nemo-instruct-2407.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1"
