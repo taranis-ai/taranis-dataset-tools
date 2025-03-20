@@ -12,7 +12,7 @@ from transformers import AutoTokenizer
 
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
-from taranis_ds.misc import detect_language
+from taranis_ds.misc import check_config, detect_language
 from taranis_ds.persist import check_table_exists, get_db_connection
 
 
@@ -42,7 +42,7 @@ def get_tokens(df: pd.DataFrame, tokenizer_name: str) -> list:
 def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: int | None = None) -> pd.DataFrame:
     df = pd.read_json(ds_path)
 
-    df = df.explode("news_items")
+    df = df.explode("news_items", ignore_index=True)
 
     # create columns for content, title & news_item_id from the news_item
     df["content"] = df["news_items"].apply(lambda item: item["content"])
@@ -75,6 +75,15 @@ def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Conn
 
 
 def run():
+    if not check_config("TARANIS_DATASET_PATH", str):
+        logger.error("Skipping preprocess step")
+        return
+    if not check_config("PREPROCESS_TOKENIZER", str):
+        logger.error("Skipping preprocess step")
+        return
+    if not check_config("PREPROCESS_MAX_TOKENS", int, required=False):
+        logger.info("Config PREPROCESS_MAX_TOKENS was not set. Imposing no limit on maximum news item length")
+
     connection = get_db_connection(Config.DB_PATH, init=True)
     df = preprocess_taranis_dataset(Config.TARANIS_DATASET_PATH, Config.PREPROCESS_TOKENIZER, Config.PREPROCESS_MAX_TOKENS)
     logger.info("Saving preprocessed data to %s", Config.DB_PATH)
