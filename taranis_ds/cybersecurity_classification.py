@@ -119,7 +119,6 @@ def run():
         chat_model,
         news_items,
         connection,
-        "results",
         Config.CYBERSEC_CLASS_REQUEST_WAIT_TIME,
         Config.DEBUG,
     )

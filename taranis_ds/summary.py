@@ -133,7 +133,10 @@ def run():
             insert_column(connection, "results", col, "TEXT")
             return
     try:
-        query_result = run_query(connection, f"SELECT id, content, language FROM {'results'} WHERE summary_status != 'OK'")
+        query_result = run_query(
+            connection,
+            "SELECT id, content, language FROM results WHERE summary_status != 'OK'",
+        )
     except RuntimeError as e:
         logger.error(e)
         return
@@ -150,7 +153,6 @@ def run():
         chat_model,
         news_items,
         connection,
-        "results",
         Config.SUMMARY_MAX_LENGTH,
         Config.SUMMARY_QUALITY_THRESHOLD,
         Config.SUMMARY_REQUEST_WAIT_TIME,
