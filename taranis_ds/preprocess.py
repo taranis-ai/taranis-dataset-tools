@@ -75,12 +75,11 @@ def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Conn
 
 
 def run():
-    if not check_config("TARANIS_DATASET_PATH", str):
-        logger.error("Skipping preprocess step")
-        return
-    if not check_config("PREPROCESS_TOKENIZER", str):
-        logger.error("Skipping preprocess step")
-        return
+    for conf_name, conf_type in [("TARANIS_DATASET_PATH", str), ("PREPROCESS_TOKENIZER", str), ("CYBERSEC_CLASS_ENDPOINT", str)]:
+        if not check_config(conf_name, conf_type):
+            logger.error("Skipping preprocess step")
+            return
+
     if not check_config("PREPROCESS_MAX_TOKENS", int, required=False):
         logger.info("Config PREPROCESS_MAX_TOKENS was not set. Imposing no limit on maximum news item length")
 

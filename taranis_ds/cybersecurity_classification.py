@@ -19,7 +19,7 @@ from llm_tools import create_chain, prompt_model_with_retry
 
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
-from taranis_ds.misc import convert_language
+from taranis_ds.misc import check_config, convert_language
 from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
 
 
@@ -88,9 +88,14 @@ def classify_news_item_cybersecurity(
 
 
 def run():
+    for conf_name, conf_type in [("CYBERSEC_CLASS_MODEL", str), ("CYBERSEC_CLASS_API_KEY", str), ("CYBERSEC_CLASS_ENDPOINT", str)]:
+        if not check_config(conf_name, conf_type):
+            logger.error("Skipping cybersecurity_classification step")
+            return
+
     connection = get_db_connection(Config.DB_PATH, init=True)
     if not check_table_exists(connection, Config.TABLE_NAME):
-        logger.error("Table %s does not exist. Cannot classify news items in cybersecurity/non-cybersecurity", Config.TABLE_NAME)
+        logger.error("Table %s does not exist. Cannot classify news items in Cybersecurity/Non-Cybersecurity", Config.TABLE_NAME)
         return
 
     for col in ["cybersecurity", "cybersecurity_status"]:
@@ -105,9 +110,9 @@ def run():
     news_items = [{"id": row[0], "content": row[1], "language": row[2]} for row in query_result]
 
     chat_model = ChatMistralAI(
-        model=Config.CYBERSEC_CLASS_TEACHER_MODEL,
-        api_key=Config.CYBERSEC_CLASS_TEACHER_API_KEY,
-        endpoint=Config.CYBERSEC_CLASS_TEACHER_ENDPOINT,
+        model=Config.CYBERSEC_CLASS_MODEL,
+        api_key=Config.CYBERSEC_CLASS_API_KEY,
+        endpoint=Config.CYBERSEC_CLASS_ENDPOINT,
         max_tokens=10,
     )
 
