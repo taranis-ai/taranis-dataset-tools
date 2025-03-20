@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     SUMMARY_QUALITY_THRESHOLD: float = 0.6
     SUMMARY_REQUEST_WAIT_TIME: float = 2.0
 
+    CYBERSEC_CLASS_TEACHER_MODEL: str = "Mixtral-8x7B-Instruct-v0.1"
+    CYBERSEC_CLASS_TEACHER_ENDPOINT: str = (
+        "https://mixtral-8x7b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1/chat/completions"
+    )
+    CYBERSEC_CLASS_TEACHER_API_KEY: str = ""
+    CYBERSEC_CLASS_TEACHER_TEMPERATURE: float = 0.7
+    CYBERSEC_CLASS_REQUEST_WAIT_TIME: float = 2.0
+
     DEBUG: bool = False
 
     DB_PATH: str = "taranis_data_pipeline.db"
