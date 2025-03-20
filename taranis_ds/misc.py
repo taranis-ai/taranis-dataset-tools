@@ -9,12 +9,12 @@ import sqlite3
 from pathlib import Path
 
 import pandas as pd
-from config import Config
 from iso639 import Lang
 from iso639.exceptions import InvalidLanguageValue
 from langdetect import detect
 from langdetect.lang_detect_exception import LangDetectException
 
+from taranis_ds.config import Config
 from taranis_ds.log import get_logger
 
 
@@ -32,7 +32,7 @@ def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Conn
 
 
 def check_config(name: str, conf_type: type, required: bool = True):
-    if name not in Config:
+    if not getattr(Config, name, None):
         if required:
             logger.error("Config %s was not set", name)
         return False
@@ -40,6 +40,7 @@ def check_config(name: str, conf_type: type, required: bool = True):
         if required:
             logger.error("Config %s is not of type", conf_type)
         return False
+    return True
 
 
 def convert_language(lang_code: str) -> str:
