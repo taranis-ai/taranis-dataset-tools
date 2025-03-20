@@ -20,7 +20,7 @@ from llm_tools import create_chain, prompt_model_with_retry
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
 from taranis_ds.misc import check_config, convert_language
-from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, run_query, update_row
+from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, insert_column, run_query, update_row
 
 
 logger = get_logger(__name__)
@@ -95,12 +95,16 @@ def run():
 
     connection = get_db_connection(Config.DB_PATH, init=True)
     if not check_table_exists(connection, Config.TABLE_NAME):
-        logger.error("Table %s does not exist. Cannot classify news items in Cybersecurity/Non-Cybersecurity", Config.TABLE_NAME)
+        logger.error(
+            "Table %s does not exist in db %s. Cannot classify news items in Cybersecurity/Non-Cybersecurity",
+            Config.TABLE_NAME,
+            Config.DB_PATH,
+        )
         return
 
     for col in ["cybersecurity", "cybersecurity_status"]:
         if not check_column_exists(connection, Config.TABLE_NAME, col):
-            logger.error("The column '%s' does not exist in the table %s. Create it first", col, Config.TABLE_NAME)
+            insert_column(connection, Config.TABLE_NAME, col, "TEXT")
             return
     try:
         query_result = run_query(connection, f"SELECT id, content, language FROM {Config.TABLE_NAME} WHERE cybersecurity_status != 'OK'")
