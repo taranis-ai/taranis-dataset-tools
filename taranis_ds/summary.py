@@ -70,7 +70,6 @@ def create_summaries_for_news_items(
     chat_model: BaseChatModel,
     news_items: List[Dict],
     connection: sqlite3.Connection,
-    table_name: str,
     max_length: int,
     quality_threshold: float,
     wait_time: float,
@@ -104,7 +103,7 @@ def create_summaries_for_news_items(
             status = "LOW_QUALITY"
 
         try:
-            update_row(connection, table_name, row["id"], ["summary", "summary_status"], [summary, status])
+            update_row(connection, "results", row["id"], ["summary", "summary_status"], [summary, status])
         except RuntimeError as e:
             logger.error(e)
 
@@ -125,16 +124,16 @@ def run():
             return
 
     connection = get_db_connection(Config.DB_PATH, init=True)
-    if not check_table_exists(connection, Config.TABLE_NAME):
-        logger.error("Table %s does not exist in db %s. Cannot create summaries", Config.TABLE_NAME, Config.DB_PATH)
+    if not check_table_exists(connection, "results"):
+        logger.error("Table %s does not exist in db %s. Cannot create summaries", "results", Config.DB_PATH)
         return
 
     for col in ["summary", "summary_status"]:
-        if not check_column_exists(connection, Config.TABLE_NAME, col):
-            insert_column(connection, Config.TABLE_NAME, col, "TEXT")
+        if not check_column_exists(connection, "results", col):
+            insert_column(connection, "results", col, "TEXT")
             return
     try:
-        query_result = run_query(connection, f"SELECT id, content, language FROM {Config.TABLE_NAME} WHERE summary_status != 'OK'")
+        query_result = run_query(connection, f"SELECT id, content, language FROM {'results'} WHERE summary_status != 'OK'")
     except RuntimeError as e:
         logger.error(e)
         return
@@ -151,7 +150,7 @@ def run():
         chat_model,
         news_items,
         connection,
-        Config.TABLE_NAME,
+        "results",
         Config.SUMMARY_MAX_LENGTH,
         Config.SUMMARY_QUALITY_THRESHOLD,
         Config.SUMMARY_REQUEST_WAIT_TIME,

@@ -84,13 +84,13 @@ def run():
     df = preprocess_taranis_dataset(Config.TARANIS_DATASET_PATH, Config.PREPROCESS_TOKENIZER, Config.PREPROCESS_MAX_TOKENS)
     logger.info("Saving preprocessed data to %s", Config.DB_PATH)
 
-    if check_table_exists(connection, Config.TABLE_NAME):
-        logger.info("Table %s already exists, update it with new entries", Config.TABLE_NAME)
-        written_rows = save_df_to_table(df, Config.TABLE_NAME, connection)
-        logger.info("%s rows written to %s", written_rows, Config.TABLE_NAME)
+    if check_table_exists(connection, "results"):
+        logger.info("Table %s already exists, update it with new entries", "results")
+        written_rows = save_df_to_table(df, "results", connection)
+        logger.info("%s rows written to %s", written_rows, "results")
     else:
-        logger.info("Creating new table %s", Config.TABLE_NAME)
-        df.to_sql(Config.TABLE_NAME, connection, index=False)
+        logger.info("Creating new table %s", "results")
+        df.to_sql("results", connection, index=False)
     connection.close()
 
 

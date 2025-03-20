@@ -20,7 +20,7 @@ from llm_tools import create_chain, prompt_model_with_retry
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
 from taranis_ds.misc import check_config, convert_language
-from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, insert_column, run_query, update_row
+from taranis_ds.persist import check_column_exists, get_db_connection, insert_column, run_query, update_row
 
 
 logger = get_logger(__name__)
@@ -46,7 +46,6 @@ def classify_news_item_cybersecurity(
     chat_model: BaseChatModel,
     news_items: List[Dict],
     connection: sqlite3.Connection,
-    table_name: str,
     wait_time: float,
     debug: bool = False,
 ):
@@ -73,7 +72,7 @@ def classify_news_item_cybersecurity(
             cooldown_count = 0
 
         try:
-            update_row(connection, table_name, row["id"], ["cybersecurity", "cybersecurity_status"], [category, status])
+            update_row(connection, "results", row["id"], ["cybersecurity", "cybersecurity_status"], [category, status])
         except RuntimeError as e:
             logger.error(e)
 
@@ -93,21 +92,17 @@ def run():
             logger.error("Skipping cybersecurity_classification step")
             return
 
-    connection = get_db_connection(Config.DB_PATH, init=True)
-    if not check_table_exists(connection, Config.TABLE_NAME):
-        logger.error(
-            "Table %s does not exist in db %s. Cannot classify news items in Cybersecurity/Non-Cybersecurity",
-            Config.TABLE_NAME,
-            Config.DB_PATH,
-        )
-        return
+    connection = get_db_connection(Config.DB_PATH, "results")
 
     for col in ["cybersecurity", "cybersecurity_status"]:
-        if not check_column_exists(connection, Config.TABLE_NAME, col):
-            insert_column(connection, Config.TABLE_NAME, col, "TEXT")
+        if not check_column_exists(connection, "results", col):
+            insert_column(connection, "results", col, "TEXT")
             return
     try:
-        query_result = run_query(connection, f"SELECT id, content, language FROM {Config.TABLE_NAME} WHERE cybersecurity_status != 'OK'")
+        query_result = run_query(
+            connection,
+            "SELECT id, content, language FROM results WHERE cybersecurity_status != 'OK'",
+        )
     except RuntimeError as e:
         logger.error(e)
         return
@@ -124,7 +119,7 @@ def run():
         chat_model,
         news_items,
         connection,
-        Config.TABLE_NAME,
+        "results",
         Config.CYBERSEC_CLASS_REQUEST_WAIT_TIME,
         Config.DEBUG,
     )

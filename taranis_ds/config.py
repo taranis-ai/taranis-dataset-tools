@@ -35,9 +35,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DB_PATH: str = "taranis_data_pipeline.db"
-    TABLE_NAME: str = "results"
 
-    @field_validator("DB_PATH", "TABLE_NAME", mode="before")
+    @field_validator("DB_PATH", mode="before")
     def check_non_empty_string(cls, value: str, info: ValidationInfo) -> str:
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"{info.field_name} must be a non-empty string")

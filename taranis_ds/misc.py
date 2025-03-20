@@ -21,14 +21,14 @@ from taranis_ds.log import get_logger
 logger = get_logger(__name__)
 
 
-def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Connection) -> int:
-    existing_df = pd.read_sql(f"SELECT * FROM {table_name}", connection, coerce_float=False)
+def save_df_to_table(df: pd.DataFrame, connection: sqlite3.Connection) -> int:
+    existing_df = pd.read_sql("SELECT * FROM results", connection, coerce_float=False)
     new_df = df[~df["id"].isin(existing_df["id"])]  # get only rows that are not already in db
     if new_df.empty:
         logger.info("No new entries to save in database")
         return 0
 
-    return new_df.to_sql(table_name, connection, if_exists="append", index=False)
+    return new_df.to_sql("results", connection, if_exists="append", index=False)
 
 
 def check_config(name: str, conf_type: type, required: bool = True):

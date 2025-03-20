@@ -36,7 +36,7 @@ def save_to_db():
         return
 
     connection = get_db_connection(Config.DB_PATH)
-    save_df_to_table(df, Config.TABLE_NAME, connection)
+    save_df_to_table(df, "results", connection)
 
 
 def run():

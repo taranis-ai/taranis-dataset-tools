@@ -27,7 +27,7 @@ def check_column_exists(connection: sqlite3.Connection, table_name: str, column_
 
 def init_db(db_path: str, table_name: str):
     connection = sqlite3.Connection(db_path)
-    if check_table_exists(connection, "table_name"):
+    if check_table_exists(connection, table_name):
         logger.info("Table %s already exists", table_name)
         connection.close()
 
@@ -37,11 +37,10 @@ def init_db(db_path: str, table_name: str):
     connection.close()
 
 
-def get_db_connection(db_path: str) -> sqlite3.Connection:
+def get_db_connection(db_path: str, table_name) -> sqlite3.Connection:
     if not Path(db_path).exists():
-        raise RuntimeError(f"Database at {db_path} does not exist. You need to create it first")
-    connection = sqlite3.Connection(db_path)
-    return connection
+        init_db(db_path, table_name)
+    return sqlite3.Connection(db_path)
 
 
 def insert_column(connection: sqlite3.Connection, table_name: str, column_name: str, column_type: str):
