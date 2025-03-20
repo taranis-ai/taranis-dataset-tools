@@ -90,7 +90,7 @@ def classify_news_item_cybersecurity(
 def run():
     connection = get_db_connection(Config.DB_PATH, init=True)
     if not check_table_exists(connection, Config.TABLE_NAME):
-        logger.error("Table %s does not exist. Cannot create summaries", Config.TABLE_NAME)
+        logger.error("Table %s does not exist. Cannot classify news items in cybersecurity/non-cybersecurity", Config.TABLE_NAME)
         return
 
     for col in ["cybersecurity", "cybersecurity_status"]:
@@ -98,17 +98,17 @@ def run():
             logger.error("The column '%s' does not exist in the table %s. Create it first", col, Config.TABLE_NAME)
             return
     try:
-        query_result = run_query(connection, f"SELECT id, content, language FROM {Config.TABLE_NAME} WHERE summary_status != 'OK'")
+        query_result = run_query(connection, f"SELECT id, content, language FROM {Config.TABLE_NAME} WHERE cybersecurity_status != 'OK'")
     except RuntimeError as e:
         logger.error(e)
         return
     news_items = [{"id": row[0], "content": row[1], "language": row[2]} for row in query_result]
 
     chat_model = ChatMistralAI(
-        model=Config.SUMMARY_TEACHER_MODEL,
-        api_key=Config.SUMMARY_TEACHER_API_KEY,
-        endpoint=Config.SUMMARY_TEACHER_ENDPOINT,
-        max_tokens=Config.SUMMARY_MAX_TOKENS,
+        model=Config.CYBERSEC_CLASS_TEACHER_MODEL,
+        api_key=Config.CYBERSEC_CLASS_TEACHER_API_KEY,
+        endpoint=Config.CYBERSEC_CLASS_TEACHER_ENDPOINT,
+        max_tokens=10,
     )
 
     classify_news_item_cybersecurity(
@@ -116,7 +116,7 @@ def run():
         news_items,
         connection,
         Config.TABLE_NAME,
-        Config.SUMMARY_REQUEST_WAIT_TIME,
+        Config.CYBERSEC_CLASS_REQUEST_WAIT_TIME,
         Config.DEBUG,
     )
 
