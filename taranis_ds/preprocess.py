@@ -6,6 +6,7 @@ Save processed results to an SQLite DB
 """
 
 import sqlite3
+from pathlib import Path
 
 import pandas as pd
 from transformers import AutoTokenizer
@@ -70,8 +71,7 @@ def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Conn
         logger.info("No new entries to save in database")
         return 0
 
-    rows = new_df.to_sql(table_name, connection, if_exists="append", index=False)
-    return rows
+    return new_df.to_sql(table_name, connection, if_exists="append", index=False)
 
 
 def run():
@@ -79,6 +79,14 @@ def run():
         if not check_config(conf_name, conf_type):
             logger.error("Skipping preprocess step")
             return
+
+    if not Path(Config.TARANIS_DATASET_PATH).exists():
+        logger.error("%s does not exist", Config.TARANIS_DATASET_PATH)
+        return
+
+    if not Config.TARANIS_DATASET_PATH.endswith(".json"):
+        logger.error("%s must be in .json format")
+        return
 
     if not check_config("PREPROCESS_MAX_TOKENS", int, required=False):
         logger.info("Config PREPROCESS_MAX_TOKENS was not set. Imposing no limit on maximum news item length")
