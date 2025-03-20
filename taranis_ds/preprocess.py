@@ -5,7 +5,6 @@ Run pre-processing steps on raw data exported from Taranis-AI
 Save processed results to an SQLite DB
 """
 
-import sqlite3
 from pathlib import Path
 
 import pandas as pd
@@ -13,7 +12,7 @@ from transformers import AutoTokenizer
 
 from taranis_ds.config import Config
 from taranis_ds.log import get_logger
-from taranis_ds.misc import check_config, detect_language
+from taranis_ds.misc import check_config, detect_language, save_df_to_table
 from taranis_ds.persist import check_table_exists, get_db_connection
 
 
@@ -62,16 +61,6 @@ def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: in
         df = df[df["tokens"] <= max_tokens]
 
     return df[["id", "news_item_id", "title", "content", "tokens", "language"]]
-
-
-def save_df_to_table(df: pd.DataFrame, table_name: str, connection: sqlite3.Connection) -> int:
-    existing_df = pd.read_sql(f"SELECT * FROM {table_name}", connection, coerce_float=False)
-    new_df = df[~df["id"].isin(existing_df["id"])]  # get only rows that are not already in db
-    if new_df.empty:
-        logger.info("No new entries to save in database")
-        return 0
-
-    return new_df.to_sql(table_name, connection, if_exists="append", index=False)
 
 
 def run():
