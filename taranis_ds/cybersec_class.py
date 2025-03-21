@@ -1,5 +1,5 @@
 """
-cybersecurity_classification.py
+cybersec_class.py
 
 Classify news items in Cybersecurity/Non-Cybersecurity
 """
@@ -91,7 +91,7 @@ def classify_news_item_cybersecurity(
 def run():
     for conf_name, conf_type in [("CYBERSEC_CLASS_MODEL", str), ("CYBERSEC_CLASS_API_KEY", str), ("CYBERSEC_CLASS_ENDPOINT", str)]:
         if not check_config(conf_name, conf_type):
-            logger.error("Skipping cybersecurity_classification step")
+            logger.error("Skipping cybersecurity classification step")
             return
 
     connection = get_db_connection(Config.DB_PATH, "results")

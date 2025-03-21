@@ -4,7 +4,7 @@ from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-VALID_TASKS = ["preprocess", "summary", "cybersecurity_class"]
+VALID_TASKS = ["preprocess", "summary", "cybersec_class"]
 
 
 class Settings(BaseSettings):
