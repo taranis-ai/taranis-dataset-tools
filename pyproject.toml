@@ -16,6 +16,10 @@ dependencies = [
     "transformers>=4.48.3",
 ]
 
+[project.scripts]
+taranis_ds = "taranis_ds.main:run"
+taranis_ds_convert = "taranis_ds.main:save_to_db"
+
 [project.optional-dependencies]
 dev = ["ruff", "pytest"]
 
