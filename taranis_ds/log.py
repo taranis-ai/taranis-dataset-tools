@@ -12,7 +12,9 @@ from taranis_ds.config import Config
 def get_logger(name: str):
     logger = logging.getLogger(name)
     log_level = logging.DEBUG if Config.DEBUG else logging.INFO
-    if not logger.handlers:
+    logger.setLevel(log_level)
+
+    if not logger.hasHandlers():
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)
 
