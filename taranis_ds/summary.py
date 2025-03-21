@@ -72,7 +72,7 @@ def create_summaries_for_news_items(
     connection: sqlite3.Connection,
     max_length: int,
     quality_threshold: float,
-    wait_time: float,
+    min_wait: float,
     debug: bool = False,
 ):
     if debug:
@@ -85,18 +85,18 @@ def create_summaries_for_news_items(
         template=SUMMARY_PROMPT_TEMPLATE, input_variables=["text", "language"], partial_variables={"max_words": max_length}
     )
 
-    backoff_coeff = 0.0
-    cooldown_count = 0.0
+    attempt = 0
+    cooldown_count = 0
 
     for row in news_items:
         prompt_lang = convert_language(row["language"])
         retry_parser.parser.desired_lang = row["language"]
         chain = create_chain(chat_model, prompt, retry_parser)
 
-        summary, status = prompt_model_with_retry(chain, wait_time**backoff_coeff, {"text": row["content"], "language": prompt_lang})
+        summary, status = prompt_model_with_retry(chain, {"text": row["content"], "language": prompt_lang})
 
         if status == "TOO_MANY_REQUESTS":
-            backoff_coeff += 1
+            attempt += 1
             cooldown_count = 0
 
         if summary and assess_summary_quality(row["content"], summary) < quality_threshold:
@@ -107,12 +107,14 @@ def create_summaries_for_news_items(
         except RuntimeError as e:
             logger.error(e)
 
-        time.sleep(wait_time**backoff_coeff)
+        sleep_time = min(10.0, max(min_wait, min_wait * (2**attempt)))
+        logger.debug("Waiting %s s before next request", sleep_time)
+        time.sleep(sleep_time)
         cooldown_count += 1
         if cooldown_count == 5:
             cooldown_count = 0
-            if backoff_coeff > 0:
-                backoff_coeff -= 1
+            if attempt > 0:
+                attempt -= 1
 
     set_debug(False)
 

@@ -24,13 +24,13 @@ class Settings(BaseSettings):
     SUMMARY_MAX_LENGTH: int = 50
     SUMMARY_TEMPERATURE: float = 0.7
     SUMMARY_QUALITY_THRESHOLD: float = 0.6
-    SUMMARY_REQUEST_WAIT_TIME: float = 2.0
+    SUMMARY_MIN_WAIT_TIME: float = 0.06
 
     CYBERSEC_CLASS_MODEL: str = "Mixtral-8x7B-Instruct-v0.1"
     CYBERSEC_CLASS_ENDPOINT: str = "https://mixtral-8x7b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1/chat/completions"
     CYBERSEC_CLASS_API_KEY: str = ""
     CYBERSEC_CLASS_TEMPERATURE: float = 0.7
-    CYBERSEC_CLASS_REQUEST_WAIT_TIME: float = 2.0
+    CYBERSEC_CLASS_MIN_WAIT_TIME: float = 0.06
 
     DEBUG: bool = False
 

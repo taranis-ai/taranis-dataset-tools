@@ -46,7 +46,7 @@ def classify_news_item_cybersecurity(
     chat_model: BaseChatModel,
     news_items: List[Dict],
     connection: sqlite3.Connection,
-    wait_time: float,
+    min_wait: float,
     debug: bool = False,
 ):
     if debug:
@@ -57,18 +57,18 @@ def classify_news_item_cybersecurity(
 
     prompt = PromptTemplate(template=CYBERSEC_CLASS_PROMPT_TEMPLATE, input_variables=["language", "text"])
 
-    backoff_coeff = 0.0
-    cooldown_count = 0.0
+    attempt = 0
+    cooldown_count = 0
 
     for row in news_items:
         prompt_lang = convert_language(row["language"])
         retry_parser.parser.desired_lang = row["language"]
         chain = create_chain(chat_model, prompt, retry_parser)
 
-        category, status = prompt_model_with_retry(chain, wait_time, backoff_coeff, {"language": prompt_lang, "text": row["content"]})
+        category, status = prompt_model_with_retry(chain, {"language": prompt_lang, "text": row["content"]})
 
         if status == "TOO_MANY_REQUESTS":
-            backoff_coeff += 1
+            attempt += 1
             cooldown_count = 0
 
         try:
@@ -76,12 +76,14 @@ def classify_news_item_cybersecurity(
         except RuntimeError as e:
             logger.error(e)
 
-        time.sleep(wait_time**backoff_coeff)
+        sleep_time = min(10.0, max(min_wait, min_wait * (2**attempt)))
+        logger.debug("Waiting %s s before next request", sleep_time)
+        time.sleep(sleep_time)
         cooldown_count += 1
         if cooldown_count == 5:
             cooldown_count = 0
-            if backoff_coeff > 0:
-                backoff_coeff -= 1
+            if attempt > 0:
+                attempt -= 1
 
     set_debug(False)
 
@@ -119,7 +121,7 @@ def run():
         chat_model,
         news_items,
         connection,
-        Config.CYBERSEC_CLASS_REQUEST_WAIT_TIME,
+        Config.CYBERSEC_CLASS_MIN_WAIT_TIME,
         Config.DEBUG,
     )
 
