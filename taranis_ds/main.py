@@ -35,8 +35,8 @@ def save_to_db():
         logger.error("Could not load %s. Error: %s", Config.PROCESSED_DATASET_PATH, e)
         return
 
-    connection = get_db_connection(Config.DB_PATH)
-    save_df_to_table(df, "results", connection)
+    connection = get_db_connection(Config.DB_PATH, "results")
+    save_df_to_table(df, connection)
 
 
 def run():
