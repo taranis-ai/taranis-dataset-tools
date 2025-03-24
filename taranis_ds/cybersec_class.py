@@ -36,7 +36,7 @@ CYBERSEC_CLASS_PROMPT_TEMPLATE = (
 
 
 def process_answer(text):
-    if match := re.search(r"(non-)?c(yb|by)ersecurity", text, re.IGNORECASE):
+    if match := re.search(r"(non-)?c(yb|by)er(s)?ecurity", text, re.IGNORECASE):
         return "non-cybersecurity" if match[1] else "cybersecurity"
     return None
 
