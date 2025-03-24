@@ -4,6 +4,7 @@ cybersec_class.py
 Classify news items in Cybersecurity/Non-Cybersecurity
 """
 
+import re
 import sqlite3
 import time
 from typing import Dict, List
@@ -34,17 +35,18 @@ CYBERSEC_CLASS_PROMPT_TEMPLATE = (
 )
 
 
-def process_answer(answer: str):
-    answer = answer.strip().strip("\n").strip("\t").strip(".").strip("'").strip('"')
-    return answer.lower()
+def process_answer(text):
+    if match := re.search(r"(non-)?c(yb|by)ersecurity", text, re.IGNORECASE):
+        return "non-cybersecurity" if match[1] else "cybersecurity"
+    return None
 
 
 class CategoryOutputParser(BaseOutputParser):
     def parse(self, text: str):
-        answer = process_answer(text)
-        if answer not in ["cybersecurity", "non-cybersecurity"]:
+        if answer := process_answer(text):
+            return answer
+        else:
             raise OutputParserException(f"Invalid output: {text}. The output should be only one of 'cybersecurity' or 'non-cybersecurity'")
-        return answer
 
 
 def classify_news_item_cybersecurity(
@@ -107,7 +109,6 @@ def run():
     for col in ["cybersecurity", "cybersecurity_status"]:
         if not check_column_exists(connection, "results", col):
             insert_column(connection, "results", col, "TEXT")
-            return
     try:
         query_result = run_query(
             connection,
