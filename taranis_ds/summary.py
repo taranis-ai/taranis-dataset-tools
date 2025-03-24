@@ -23,7 +23,7 @@ from taranis_ds.config import Config
 from taranis_ds.llm_tools import create_chain, prompt_model_with_retry
 from taranis_ds.log import get_logger
 from taranis_ds.misc import check_config, convert_language, detect_language
-from taranis_ds.persist import check_column_exists, check_table_exists, get_db_connection, insert_column, run_query, update_row
+from taranis_ds.persist import check_column_exists, get_db_connection, insert_column, run_query, update_row
 
 
 logger = get_logger(__name__)
@@ -62,8 +62,7 @@ def assess_summary_quality(original_text: str, summary_text: str) -> float:
     embedding_model = SentenceTransformer("sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens")
     ref_embedding = torch.tensor(embedding_model.encode(original_text)).squeeze(0)
     summary_embedding = torch.tensor(embedding_model.encode(summary_text)).squeeze(0)
-    similarity = torch.nn.CosineSimilarity(dim=0)(ref_embedding, summary_embedding).item()
-    return similarity
+    return torch.nn.CosineSimilarity(dim=0)(ref_embedding, summary_embedding).item()
 
 
 def create_summaries_for_news_items(
@@ -88,7 +87,8 @@ def create_summaries_for_news_items(
     attempt = 0
     cooldown_count = 0
 
-    for row in news_items:
+    for i, row in enumerate(news_items):
+        logger.info("Creating summary for news item %s/%s", i + 1, len(news_items))
         prompt_lang = convert_language(row["language"])
         retry_parser.parser.desired_lang = row["language"]
         chain = create_chain(chat_model, prompt, retry_parser)
@@ -96,12 +96,14 @@ def create_summaries_for_news_items(
         summary, status = prompt_model_with_retry(chain, {"text": row["content"], "language": prompt_lang})
 
         if status == "TOO_MANY_REQUESTS":
+            logger.error("Got TOO_MANY_REQUESTS response. Continuing to next item and increasing the wait time.")
             attempt += 1
             cooldown_count = 0
 
         if summary and assess_summary_quality(row["content"], summary) < quality_threshold:
             status = "LOW_QUALITY"
 
+        logger.info("STATUS: %s", status)
         try:
             update_row(connection, "results", row["id"], ["summary", "summary_status"], [summary, status])
         except RuntimeError as e:
@@ -120,15 +122,13 @@ def create_summaries_for_news_items(
 
 
 def run():
+    logger.info("Running summary step")
     for conf_name, conf_type in [("SUMMARY_MODEL", str), ("SUMMARY_API_KEY", str), ("SUMMARY_ENDPOINT", str), ("SUMMARY_MAX_LENGTH", int)]:
         if not check_config(conf_name, conf_type):
             logger.error("Skipping summary step")
             return
 
     connection = get_db_connection(Config.DB_PATH, init=True)
-    if not check_table_exists(connection, "results"):
-        logger.error("Table %s does not exist in db %s. Cannot create summaries", "results", Config.DB_PATH)
-        return
 
     for col in ["summary", "summary_status"]:
         if not check_column_exists(connection, "results", col):
@@ -137,11 +137,12 @@ def run():
     try:
         query_result = run_query(
             connection,
-            "SELECT id, content, language FROM results WHERE summary_status != 'OK'",
+            "SELECT id, content, language FROM results WHERE summary_status IS NOT 'OK'",
         )
     except RuntimeError as e:
         logger.error(e)
         return
+    logger.info("Creating summaries for %s news items", len(query_result))
     news_items = [{"id": row[0], "content": row[1], "language": row[2]} for row in query_result]
 
     chat_model = ChatMistralAI(
