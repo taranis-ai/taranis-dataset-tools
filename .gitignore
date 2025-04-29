@@ -2,3 +2,5 @@
 .env
 *.egg-info
 *.db
+*.txt
+*.json
