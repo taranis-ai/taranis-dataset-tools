@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from taranis_ds.config import Config
+import taranis_ds
+from taranis_ds.config import VALID_TASKS, Config
 from taranis_ds.log import get_logger
 from taranis_ds.misc import check_config, save_df_to_table
 from taranis_ds.persist import get_db_connection
@@ -31,6 +32,8 @@ def save_to_db():
 
     try:
         df = pd.read_json(Config.PROCESSED_DATASET_PATH)
+        # get correct subset of columns if exists
+        df = df[["id", "news_item_id", "title", "content", "tokens", "language"]]
     except ValueError as e:
         logger.error("Could not load %s. Error: %s", Config.PROCESSED_DATASET_PATH, e)
         return
@@ -40,7 +43,10 @@ def save_to_db():
 
 
 def run():
-    pass
+    for task in VALID_TASKS:
+        if task in Config.TASKS:
+            module = getattr(taranis_ds, task)
+            module.run()
 
 
 if __name__ == "__main__":
