@@ -64,6 +64,7 @@ def preprocess_taranis_dataset(ds_path: str, tokenizer_name: str, max_tokens: in
 
 
 def run():
+    logger.info("Running preprocess step")
     for conf_name, conf_type in [("TARANIS_DATASET_PATH", str), ("PREPROCESS_TOKENIZER", str), ("CYBERSEC_CLASS_ENDPOINT", str)]:
         if not check_config(conf_name, conf_type):
             logger.error("Skipping preprocess step")
@@ -80,13 +81,13 @@ def run():
     if not check_config("PREPROCESS_MAX_TOKENS", int, required=False):
         logger.info("Config PREPROCESS_MAX_TOKENS was not set. Imposing no limit on maximum news item length")
 
-    connection = get_db_connection(Config.DB_PATH)
+    connection = get_db_connection(Config.DB_PATH, "results")
     df = preprocess_taranis_dataset(Config.TARANIS_DATASET_PATH, Config.PREPROCESS_TOKENIZER, Config.PREPROCESS_MAX_TOKENS)
     logger.info("Saving preprocessed data to %s", Config.DB_PATH)
 
     if check_table_exists(connection, "results"):
         logger.info("Table %s already exists, update it with new entries", "results")
-        written_rows = save_df_to_table(df, "results", connection)
+        written_rows = save_df_to_table(df, connection)
         logger.info("%s rows written to %s", written_rows, "results")
     else:
         logger.info("Creating new table %s", "results")
