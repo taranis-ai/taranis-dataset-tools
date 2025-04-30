@@ -79,7 +79,7 @@ def run():
         logger.error("%s must be in .json format", Config.TARANIS_DATASET_PATH)
         return
 
-    logger.info("Fetching stories from %s", {Config.TARANIS_INSTANCE_URL})
+    logger.info("Fetching stories from %s", Config.TARANIS_INSTANCE_URL)
     stories = fetch_taranis_stories(
         Config.TARANIS_INSTANCE_URL,
         Config.TARANIS_AUTH_ENDPOINT,
