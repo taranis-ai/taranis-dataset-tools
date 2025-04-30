@@ -5,13 +5,6 @@ from .testdata import REF_NEWS_ITEM_DE, REF_SUMMARY_DE, NON_SUMMARY_DE
 
 
 
-def test_convert_language():
-    assert summary.convert_language("fr") == "french"
-    assert summary.convert_language("de") == "german"
-    assert summary.convert_language("en") == "english"
-    assert summary.convert_language("ru") == "russian"
-
-
 @patch("taranis_ds.summary.prompt_model_with_retry")
 def test_create_summaries_for_news_items(mock_llm_response, results_db):
 
