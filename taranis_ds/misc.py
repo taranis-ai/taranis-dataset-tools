@@ -28,7 +28,7 @@ def save_df_to_table(df: pd.DataFrame, connection: sqlite3.Connection) -> int:
         logger.info("No new entries to save in database")
         return 0
 
-    return new_df.to_sql("results", connection, if_exists="append", index=False)
+    return new_df.to_sql("results", connection, if_exists="append", index=False) or 0
 
 
 def check_config(name: str, conf_type: type, required: bool = True):

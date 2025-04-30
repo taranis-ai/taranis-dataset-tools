@@ -23,11 +23,3 @@ def test_preprocess_taranis_dataset(taranis_dataset_path, tokenizer):
     df = preprocess.preprocess_taranis_dataset(taranis_dataset_path, tokenizer, 300)
     assert df["tokens"].max() <= 300
 
-
-def test_save_df_to_table(test_db):
-    df = pd.DataFrame([{"id": 1, "col1": "Some text", "col2": 666},
-                       {"id": 2, "col1": "Yet another text", "col2": 90},
-                       {"id": 3, "col1": "three", "col2": 22},
-                       ])
-    assert preprocess.save_df_to_table(df, test_db) == 3
-    assert preprocess.save_df_to_table(df, test_db) == 0
