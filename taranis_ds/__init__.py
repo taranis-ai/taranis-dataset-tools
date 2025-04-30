@@ -1,4 +1,4 @@
-from taranis_ds import cybersec_class, preprocess, summary
+from taranis_ds import cybersec_class, load, preprocess, summary
 
 
-__all__ = ["preprocess", "summary", "cybersec_class"]
+__all__ = ["load", "preprocess", "summary", "cybersec_class"]

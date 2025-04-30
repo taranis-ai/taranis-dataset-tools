@@ -4,13 +4,20 @@ from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-VALID_TASKS = ["preprocess", "summary", "cybersec_class"]
+VALID_TASKS = ["load", "preprocess", "summary", "cybersec_class"]
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore", cli_parse_args=True)
 
     TASKS: list = VALID_TASKS
+
+    TARANIS_INSTANCE_URL: str = ""
+    TARANIS_AUTH_ENDPOINT: str = "/api/auth/login"
+    TARANIS_EXPORT_ENDPOINT: str = "/api/admin/export-stories"
+    TARANIS_ADMIN_USERNAME: str = ""
+    TARANIS_ADMIN_PASSWORD: str = ""
+
     TARANIS_DATASET_PATH: str = ""
 
     PREPROCESS_TOKENIZER: str = "facebook/bart-large-cnn"
