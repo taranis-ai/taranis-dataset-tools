@@ -16,6 +16,9 @@ dependencies = [
     "transformers>=4.48.3",
 ]
 
+[tool.uv]
+package = true
+
 [project.scripts]
 taranis_ds = "taranis_ds.main:run"
 taranis_ds_convert = "taranis_ds.main:save_to_db"
