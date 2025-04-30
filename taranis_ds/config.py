@@ -49,6 +49,12 @@ class Settings(BaseSettings):
             raise ValueError(f"{info.field_name} must be a non-empty string")
         return value
 
+    @field_validator("TARANIS_INSTANCE_URL", mode="before")
+    def check_valid_url(cls, value: str, info: ValidationInfo) -> str:
+        if not value.startswith("http://"):
+            raise ValueError(f"{info.field_name} must be a valid URL in the form http://domain.tld")
+        return value
+
     @field_validator("TASKS")
     def check_valid_tasks(cls, value: str) -> str:
         if len(value) != len(set(value)):
